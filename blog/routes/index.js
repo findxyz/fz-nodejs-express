@@ -5,16 +5,28 @@
 
 var crypto = require('crypto');
 var User = require('../models/user');
+var Post = require('../models/post');
 
 module.exports = function(app){
+	// 主页
 	app.get('/', function(req, res){
-		res.render('index', {
-			title: '主页',
-			user: req.session.user,
-			success: req.flash('success').toString(),
-			error: req.flash('error').toString()
-		} );
+		Post.get(null, function(err, posts){
+			var error = req.flash('error').toString();
+			if(err){
+				error = err;
+				posts = [];
+			}
+			res.render('index', {
+				title: '主页',
+				user: req.session.user,
+				posts: posts,
+				success: req.flash('success').toString(),
+				error: error.toString()
+			});
+		});		
 	});
+	// 注册
+	app.get('/reg', checkNotLogin);
 	app.get('/reg', function(req, res){
 		res.render('reg', {
 			title: '注册',
@@ -23,6 +35,7 @@ module.exports = function(app){
 			error: req.flash('error').toString()
 		});
 	});
+	// 注册post
 	app.post('/reg', function(req, res){
 		var password = req.body.password;
 		var password_repeat = req.body.password_repeat;
@@ -56,6 +69,8 @@ module.exports = function(app){
 			});
 		});
 	});
+	// 登录
+	app.get('/login', checkNotLogin);
 	app.get('/login', function(req, res){
 		res.render('login', {
 			title: '登录',
@@ -64,9 +79,35 @@ module.exports = function(app){
 			error: req.flash('error').toString()
 		});
 	});
+	// 登录post
 	app.post('/login', function(req, res){
-		
+		// 生成密码的md5值
+		var md5 = crypto.createHash('md5');
+		var password = md5.update(req.body.password).digest('hex');
+		// 查看用户是否存在
+		var user = {
+			name: req.body.name
+		};
+		User.get(user, function(err, resultUser){
+			if(err){
+				req.flash('error', err);
+				return res.redirect('/login');
+			}
+			if(!resultUser){
+				req.flash('error', '用户不存在');
+				return res.redirect('/login');
+			}
+			if(password != resultUser.password){
+				req.flash('error', '密码不正确');
+				return res.redirect('/login');
+			}
+			req.session.user = resultUser;
+			req.flash('success', '登录成功');
+			return res.redirect('/');
+		});
 	});
+	// 发表
+	app.get('/post', checkLogin);
 	app.get('/post', function(req, res){
 		res.render('post', {
 			title: '发表',
@@ -75,10 +116,46 @@ module.exports = function(app){
 			error: req.flash('error').toString()
 		});
 	});
+	// 发表post
+	app.post('/post', checkLogin);
 	app.post('/post', function(req, res){
-		
+		var curUser = req.session.user;
+		var post = new Post(curUser.name, req.body.title, req.body.post);
+		post.save(function(err, resPost){
+			if(err){
+				req.flash('error', err);
+				return res.redirect('/');
+			}
+			req.flash('success', resPost.title + '发布成功');
+			res.redirect('/');
+		});
 	});
-	app.get('/loginout', function(req, res){
-		
+	// 注销
+	app.get('/logout', checkLogin);
+	app.get('/logout', function(req, res){
+		var user = req.session.user;
+		if(user){
+			req.session.user = null;
+			req.flash('success', '注销成功');
+			return res.redirect('/');
+		}
+		req.flash('error', '没有检测到登录信息');
+		return res.redirect('/');
 	});
+}
+// 检测未登录
+function checkNotLogin(req, res, next){
+	if(req.session.user){
+		req.flash('error', '已登录');
+		return res.redirect('back');
+	}
+	next();
+}
+// 检测已登录
+function checkLogin(req, res, next){
+	if(!req.session.user){
+		req.flash('error', '未登录');
+		return res.redirect('/login');
+	}
+	next();
 }
