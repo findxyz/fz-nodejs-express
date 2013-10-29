@@ -49,7 +49,8 @@ User.get = function(user, callback){
 			collection.findOne({
 				name: user.name
 			},function(err, resultUser){
-				if(resultUsers){
+				mongodb.close();
+				if(resultUser){
 					return callback(null, resultUser);
 				}
 				callback(err);
