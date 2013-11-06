@@ -1,0 +1,5 @@
+<%- include header %>
+<% cookies.forEach(function(cookie, index){ %>
+<p class="info"><%= index+1 %> <%= cookie.name %> <a href="#"><%= cookie.cookie %></a></p>
+<% }) %>
+<%- include footer %>
