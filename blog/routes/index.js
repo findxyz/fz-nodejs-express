@@ -203,6 +203,10 @@ module.exports = function(app){
 			});
 		});
 	});
+	// chatroom
+	app.get('/chatroom', function(req, res){
+		res.sendfile(__dirname + '/chartroom.html');
+	});
 }
 // 检测未登录
 function checkNotLogin(req, res, next){

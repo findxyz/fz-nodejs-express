@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>socketio</title>
+<style type="text/css">
+body{
+	margin: 0px;
+	padding: 0px;
+}
+#container{
+	width: 1000px;
+	height: atuo;
+	margin: 0px auto;
+}
+#blackboard{
+	font-color: blue;
+	border-style: dashed;
+	border-color: blue;
+	border-width: 1px;
+	width: 900px;
+	height: 350px;
+	margin: 0px auto;
+	padding: 5px;
+	max-height: 400px;
+    overflow: auto;
+}
+#message{
+	font-color: red;
+	border-style: dashed;
+	border-width: 1px;
+	border-color: red;
+	width: 900px;
+	height: 50px;
+	margin: 0px auto;
+	padding: 5px auto;
+	max-height: 50px;
+    overflow: auto;
+}
+#fire{
+	height: auto;
+	width: 900px;
+	margin: 5px auto;
+}
+</style>
+<script src="/javascripts/jquery-1.10.2.min.js"></script>
+<script src="/javascripts/socket.io.min.js"></script>
+<script>
+$(document).ready(function(){
+	var socket = io.connect('http://pleaseeee.51vip.biz:47723');
+	socket.on('messages', function (data) {
+		var blackboard = $("#blackboard");
+		var message = $("#message");
+		blackboard.prepend("<div>"+data.message+"</div>");
+	});
+	function send(){
+		var message = $("#message");
+		var blackboard = $("#blackboard");
+		blackboard.prepend("<div>"+message.html()+"</div>");
+		socket.emit('message', {message: message.html()});
+		message.html('').focus();
+	}
+	$("#fire").click(function(){
+		send();
+	});
+	$("#message").bind('keypress', function(e){
+		var code = e.keyCode || e.which;
+		if(code == 13) {
+			e.stopPropagation();
+			e.preventDefault();
+			if($("#message").html()){
+				send();
+			}
+		}
+	});
+});
+</script>
+</head>
+<body>
+	<div id="container">
+		<h2><a href="/">返回博客</a></h2>
+		<h4>黑板</h4>
+		<div id="blackboard"></div>
+		<h4>发言</h4>
+		<div id="message" contenteditable="true"></div>
+		<div id="fire"><input type="button" value="发送(Enter快捷键)"/></div>
+	</div>
+<body>
+</html>
